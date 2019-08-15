@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>SHAP-GBMP</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Noureddine Meraihi">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/simple.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+		<!-- percentage animation -->
+		<link rel="stylesheet" href="css/percent.css" type="text/css">
+
+
+		<!-- FondAwosom -->
+
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<!--  google font-->
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<section>
+					<!-- <h1>Télématique</h1> -->
+					<h3>Variable selection on telematics data using SHAP and GBMP</h3>
+					<p>
+						<small>By <a href="https://www.linkedin.com/in/nmeraihi">Noureddine Meraihi</a> </small>
+					</p>
+					<a href="https://github.com/ChaireCara">
+						<img width="400" height="200" data-src="image/ColourLogoUQAMChaireActuariat.png" alt="Down arrow">
+					</a>
+						<p> <a href="https://www.linkedin.com/in/nmeraihi"><i style="font-size:36px" class="fa">&#xf08c; </i></a>
+							<a href="https://github.com/nmeraihi"><i style="font-size:36px" class="fa">&#xf092; </i></a>
+						</p>
+					<!-- <a href="http://nour.me/"><i style="font-size:36px" class="fa">&#xf05a; </i></a> -->
+						<!-- <a href="https://www.strava.com/athletes/20294970"><i style="font-size:36px" class="fa">&#xf428; </i></i></a> -->
+					<!-- <p><small>Sous la supervision de <a href="http://jpboucher.uqam.ca/">Jean-Philippe Boucher</a></small></p>
+					<p><small>En collaboration avec <a href="https://www.cooperators.ca/">Co-operators</a></small></p> -->
+				</section>
+
+<section>
+		<section>
+			<h3>Plan</h3>
+			<ul>
+				<li class="fragment">The theory</li>
+				<ul>
+					<li class="fragment">Regression Trees</li>
+					<li class="fragment">Boosting algorithm & GBMP</li>
+					<li class="fragment">Shapley values</li>
+				</ul>
+				<li class="fragment">Application</li>
+				<ul>
+					<li class="fragment">Telematics data set insights</li>
+					<aside class="notes">
+						we interpret the results with different tools such as
+					</aside>
+					<li class="fragment">Variable importance</li>
+					<li class="fragment">Partial dependence plot (PDP)</li>
+					<li class="fragment">SHAP values</li>
+				</ul>
+				<li class="fragment">Modeling with selected variables</li>
+			</ul>
+		</section>
+
+				<section>
+
+
+					<h2>Regression Trees</h2>
+					<br>
+					<p class="fragment">Can be applied to both <span class="fragment highlight-blue">regression</span> and <span class="fragment highlight-green">classification</span> problems.</p>
+				</section>
+
+
+
+					<section>
+						<h2>Example</h2>
+						<p class="fragment"> Predict a baseball player’s Salary</p>
+						 <p class="fragment">based on</p>
+						 <p class="fragment"> <a style="font-size:160%;">Years</a> & <a style="font-size:160%;">Hits </a></p>
+						 <aside class="notes">
+				 			(the number of hits that he made in the previous year).
+				 		</aside>
+					</section>
+					<section>
+						<aside class="notes">
+							we take a closer look to this graph, we can split the dots into maybe 3 regions
+							<br>
+							players with more than 4 to 5 years of experience
+							<br>
+							for those who are less experienced , we can divide them into two regions, those with more maybe around 120 points
+						</aside>
+						<img width="400" src="image/exemple1.png">
+						<img width="410" src="image/exemple2.png">
+					</section>
+					<section data-background-transition="zoom">
+						<img width="400" src="image/exemple3.png">
+						<img width="300" src="image/exemple4.png">
+						 <p style="font-size:70%" class="fragment">$$R_1=\left( \mathbf{Y} | \mathbf{X_2} \leq 4,5 \right)=\exp(5,1068)=165 \ 114 \ \$$$</p>
+						<p style="font-size:70%" class="fragment">$$R_2=\left( \mathbf{Y} | \mathbf{X_2} > 4,5 \ ,\mathbf{X_1} \leq 117,5 \right) =402 \ 783 \ \$$$</p>
+						<p style="font-size:70%" class="fragment">$$R_3=\left( \mathbf{Y} | \mathbf{X_2} > 4,5 \ ,\mathbf{X_1} > 117,5 \right)=845 \ 307 \ \$$$</p>
+						<aside class="notes">
+							R1, R2, and R3 are known as terminal nodes or leaves of the tree
+							<br>
+							then we can calculate the average salary in each region
+						</aside>
+					</section>
+					<section>
+						<h3 style="color:green;">Advantages</h3>
+						<p style="font-size:70%" class="fragment">Very easy to explain</p>
+
+						<p style="font-size:70%"class="fragment">More closely mirror human decision-making</p>
+						<p style="font-size:70%"class="fragment">Can be displayed graphically, and easily interpreted </p>
+						<aside class="notes">
+							as we have just seen
+						</aside>
+					</section>
+
+
+
+					<section>
+						<h3 style="color:orange;">Disadvantages</h3>
+						<p style="font-size:70%" class="fragment">They generally do not have the same level of predictive accuracy</p>
+						<aside class="notes">
+							as some of the other regression and classification approaches
+							<br>
+							CART classification and regression tree
+							<br>
+							In other words, a small change in the data can cause a large change in the final estimated tree.
+						</aside>
+						<p style="font-size:70%" class="fragment">can be very non-robust</p>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>Boosting</h2>
+						<aside class="notes">
+							* Boosting is one of the most powerful learning ideas introduced in the a last twenty years.
+							<br>
+							* aaa
+							<br>
+							* It was originally designed for classification problems, but it can be extended to regression as well.,
+							<br>
+							*
+						</aside>
+						<p style="font-size:70%" class="fragment">The motivation for boosting was a procedure that combines the outputs of many <span style="color:orange;">“weak”</span> classifiers to produce a powerful <span style="color:blue;">“committee</span>.”</p>
+
+					</section>
+
+					<section>
+						<h2>AdaBoost.M1</h2>
+						<p style="font-size:70%" class="fragment">Most popular boosting algorithm due to <a href="https://www.sciencedirect.com/science/article/pii/S002200009791504X">Freund and Schapire (1997)</a> </p>
+
+					</section>
+
+					<section>
+						<p >Consider a two-class problem, with the output variable coded as </p>
+						<p style="font-size:70%" class="fragment">$Y \in \left\{-1, 1\right\}$</p>
+					</section>
+					<section>
+						<p style="font-size:70%">Given a vector of predictor variables $X$, a classifier $G(X)$ produces a prediction taking one of the two values $\left\{-1, 1\right\}$. The error rate on the training sample is</p>
+						<p style="font-size:90%" class="fragment">$$\overline{err}=\frac{1}{N}\sum_i^N \mathbb{1}_{\left\{ y_i\neq G(x_i) \right\}}$$</p>
+
+					</section>
+
+					<section>
+						<p>and the expected error rate on future predictions is</p>
+						<p style="font-size:90%" class="fragment">$$E_{XY}  \mathbb{1}_{(Y\neq G(X))}$$</p>
+					</section>
+
+					<section>
+						<p style="font-size:90%">The purpose of boosting is to</p>
+						<p style="font-size:70%" class="fragment"> sequentially apply the weak classification algorithm to repeatedly modified versions of the data</p>
+					</section>
+
+					<section>
+						<p style="font-size:70%" > thereby producing a sequence of weak classifiers</p>
+						<p style="font-size:90%" class="fragment">$$G_m(x), m=1,2, \dots, M$$</p>
+
+					</section>
+
+					<section>
+						<p style="font-size:70%">The predictions from all of them are then combined through a weighted majority vote to produce the final prediction:</p>
+						<p style="font-size:85%" class="fragment">$$G(x)=\text{sign}\Bigg(\sum_{m=1}^M \alpha_m G_m(x) \Bigg).$$</p>
+						<p style="font-size:65%" class="fragment">Here $\alpha_1, \alpha_2, \dots ,\alpha_M$ are computed by the boosting algorithm, and weight the contribution of each respective $G_m(x)$</p>
+						<p style="font-size:65%" class="fragment">Their effect is to give higher influence to the more accurate classifiers in the sequence.</p>
+					</section>
+
+					<section>
+						<img src="image/adaboost.png" height="400" width="650">
+						<aside class="notes">
+							The data modifications at each boosting step consist of applying weights w1,w2,...,wN to each of the training observations
+							(xi,yi), i = 1,2,...,N. Initially all of the weights are set to wi = 1/N, so that the first step simply trains the classifier
+							on the data in the usual manner. For each successive iteration m = 2,3,...,M the observation weights are individually modified
+							and the classification algorithm is reapplied to the weighted observations. At step m, those observations that were misclassified
+							by the classifier Gm−1(x) induced at the previous step have their weights increased, whereas the weights are decreased for those
+							that were classified correctly. Thus as iterations proceed, observations that are difficult to classify correctly
+							receive ever increasing influence.
+						</aside>
+					</section>
+					<section>
+							<h3>GBM</h3>
+							<img class="fragment" src="image/gbm15.png" height="400" width="600">
+							<aside class="notes">
+								On a dit qu'on pouvait utiliser n'importe quel fonction  de perte
+							</aside>
+					</section>
+
+						<section>
+							<iframe data-src="http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html" data-preload width="800" height="600"></iframe>
+						</section>
+
+						<section>
+								<h3>GBMP</h3>
+								<img class="fragment" src="image/gbmp14.png" height="400" width="700">
+						</section>
+				</section>
+
+
+				<!-- http://arogozhnikov.github.io/2016/06/24/gradient_boosting_explained.html -->
+
+				<section>
+					<section>
+						<h2>Shapley Values</h2>
+						<p style="font-size:70%" class="fragment">A method from coalitional game theory </p>
+						<p style="font-size:70%" class="fragment"> tells us how to fairly distribute the “payout” among the features</p>
+					</section>
+
+					<section>
+						<h2>General Idea</h2>
+
+						<img class="fragment" src="https://mckenzieseattle.com/assets/images/cache/Rooftop-32-6ba9acf87bbe46fbc3530e23eb192a1b.jpg" >
+						<!-- <p>You have trained a machine learning model to predict apartment prices. For a certain apartment it predicts €300,000 and you need to explain this prediction. The apartment has a size of 50 m2, is located on the 2nd floor, has a park nearby and cats are banned:</p> -->
+					</section>
+					<section>
+						<p>We have trained a machine learning model</p>
+						<img class="fragment" src="https://christophm.github.io/interpretable-ml-book/images/shapley-instance.png" height="260" width="500">
+						<p style="font-size:70%" class="fragment">The average prediction for all apartments is <a style="color:blue;">€310,000</a></p>
+					</section>
+					<section>
+						<p>How much has each feature value contributed to the <a style="color:green;">prediction</a> compared to the <a style="color:blue;">average prediction</a>?</p>
+					</section>
+
+					<section>
+
+						<h2>linear regression models</h2>
+						<p tyle="font-size:70%"> The effect of each feature is the weight of the feature times the feature value.</p>
+						<aside class="notes">
+							The answer is simple for .
+						</aside>
+					</section>
+
+					<section>
+						<h2>For more complex models</h2>
+						<aside class="notes">
+							we need a different solution
+						</aside>
+						<!-- <p style="font-size:70%" class="fragment"></p> -->
+						<p style="font-size:80%" class="fragment"> The Shapley value, coined by <a href="https://books.google.ca/books?hl=en&lr=&id=Pd3TCwAAQBAJ&oi=fnd&pg=PA307&dq=Shapley,+Lloyd+S.+%E2%80%9CA+value+for+n-person+games.%E2%80%9D+Contributions+to+the+Theory+of+Games&ots=gstXHeboyX&sig=jz81OpY7Y-Oqd9qQVD4CHtlQmu4#v=onepage&q&f=false">Shapley (1953)</a> </p>
+						<p style="font-size:80%" class="fragment">comes from cooperative game theory</p>
+					</section>
+
+					<section>
+						<h3>Coalitional game theory </h3>
+						<p style="font-size:80%" class="fragment">Players cooperate in a coalition and receive a certain profit from this cooperation</p>
+						<p style="font-size:80%" class="fragment"> The “game” : is the prediction task for a single instance of the dataset. </p>
+						<p style="font-size:80%" class="fragment"> The “gain” is the actual prediction for this instance minus the average prediction for all instances</p>
+						<p style="font-size:80%" class="fragment"> The “players” are the feature values of the instance that collaborate to receive the gain (= predict a certain value).</p>
+					</section>
+
+					<section>
+						<p style="font-size:80%" >Our goal is to explain the difference between the actual prediction (€300,000) and the average prediction (€310,000)</p>
+						<p style="font-size:80%" class="fragment"> a difference of -€10,000.</p>
+					</section>
+
+					<section>
+						<h3>How do we calculate the Shapley value for one feature?</h3>
+						<p style="font-size:80%" class="fragment">It's the average marginal contribution of a feature value across all possible coalitions</p>
+					</section>
+					<section>
+						<aside class="notes">
+							In the following figure we evaluate the contribution of the cat-banned feature value when it is added to a coalition of park-nearby and size-50. We simulate that only park-nearby, cat-banned and size-50 are in a coalition by randomly drawing another apartment from the data and using its value for the floor feature. The value floor-2nd was replaced by the randomly drawn floor-1st. Then we predict the price of the apartment with this combination (€310,000). In a second step, we remove cat-banned from the coalition by replacing it with a random value of the cat allowed/banned feature from the randomly drawn apartment. In the example it was cat-allowed, but it could have been cat-banned again. We predict the apartment price for the coalition of park-nearby and size-50 (€320,000). The contribution of cat-banned was €310,000 - €320,000 = -€10.000. This estimate depends on the values of the randomly drawn apartment that served as a “donor” for the cat and floor feature values. We will get better estimates if we repeat this sampling step and average the contributions.
+						</aside>
+						<img src="https://christophm.github.io/interpretable-ml-book/images/shapley-instance-intervention.png" height="350" width="500">
+					</section>
+					<section>
+						<p>We repeat this computation for all possible coalitions.</p>
+						<p style="font-size:70%" class="fragment">The Shapley value is the average of all the marginal contributions to all possible coalitions.</p>
+					</section>
+					<section>
+						<h4>The Shapley value is defined via a value function $\upsilon$ of players in $S$</h4>
+						<!-- <p style="font-size:70%" class="fragment"></p> -->
+						<aside class="notes">
+							The Shapley value of a feature value is its contribution to the payout, weighted and summed over all possible feature value combinations:
+						</aside>
+						<p style="font-size:70%" class="fragment">$$    \phi_j(\upsilon)=\sum_{S\subseteq \left\{x_1, \dots, x_p\right\}\left\{x_j\right\}}
+    \frac{|S|\text{!}(p-|S|-1)\text{!}}{p\text{!}}(\upsilon (S \cup \left\{ x_j\right\})-\upsilon(S))$$</p>
+						<p style="font-size:70%" class="fragment">where $S$ is a subset of the features used in the model</p>
+						<p style="font-size:70%" class="fragment">$x$ is the vector of feature values of the instance to be explained</p>
+						<p style="font-size:70%" class="fragment">$p$ is the number of features</p>
+					</section>
+					<section>
+						<p>$\upsilon_{x}(S)$ is the prediction for feature values in set S that are marginalized over features that are not included in set $S$:</p>
+						<p style="font-size:70%" class="fragment">$$\upsilon_{x}(S)=\int\hat{f}(x_{1},\ldots,x_{p})d\mathbb{P}_{x\notin{}S}-E_X(\hat{f}(X))$$</p>
+						<p style="font-size:70%" class="fragment">where we perform multiple integrations for each feature that is not contained $S$</p>
+					</section>
+
+					<section>
+						<p>All possible coalitions (sets) of feature values have to be evaluated with and without the j-th feature to calculate the exact Shapley value</p>
+						<p style="font-size:70%" class="fragment">the exact solution to this problem becomes problematic as the number of possible coalitions exponentially increases as more features are added.</p>
+					</section>
+					<section>
+						<p style="font-size:70%"><a href="https://link.springer.com/article/10.1007/s10115-013-0679-x">Strumbelj et al. (2014)</a> propose an approximation with Monte-Carlo sampling:</p>
+						<p style="font-size:70%" class="fragment">$$\hat{\phi}_{j}=\frac{1}{M}\sum_{m=1}^M\left(\hat{f}(x^{m}_{+j})-\hat{f}(x^{m}_{-j})\right)$$</p>
+						<p style="font-size:70%" class="fragment">where $\hat{f}(x^{m}_{+j})$ is the prediction for $x$,
+							but with a random number of feature values replaced by feature
+							values from a random data point , except for the respective value of feature $j$.
+							The x-vector $x^{m}_{-j}$ is almost identical to $x^{m}_{+j}$ ,
+							but the value $x_j^{m}$ is also taken from the sampled x</p>
+					</section>
+
+				</section>
+
+
+
+
+
+
+
+
+
+
+				<section>
+					<section>
+						<h1>Application</h1>
+					</section>
+					<section>
+						<p>We have classified the data into three types</p>
+						<ul>
+							<li class="fragment">The characteristics of the policyholder</li>
+							<li class="fragment">of the vehicle</li>
+							<li class="fragment">driving habits</li>
+						</ul>
+						<!-- <p style="font-size:70%" class="fragment">Demographic</p> -->
+					</section>
+					<!-- les données  -->
+					<section>
+						<h3>Policyholders</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/sexe_satut_martial.png" height="500" width="500">
+					</section>
+
+					<section>
+						<h3>Postal code</h3>
+						<aside class="notes">
+							we made a cloud graph to reprensent our postal codes
+							<br>
+							Mississauga
+							<br>
+							hamilton
+						</aside>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/codes_postaux.png" height="500" width="500">
+					</section>
+
+					<section>
+						<h3>Population density</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/population_1.png">
+					</section>
+
+					<section>
+						<h3>Some driving habits</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/week_end_rush.png" height="500" width="500">
+						<aside class="notes">
+							most of our policyholders drive on weekdays, during the day hours and, more precisely during rush hours
+							<br>
+						</aside>
+					</section>
+
+					<section>
+						<img src="image/conduite_pourcentage.png" height="500" width="500">
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h3>Distance driven - Toronto</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/map_distance_driven_zoom.png" height="500" width="500">
+					</section>
+					<section>
+						<h3>distance driven - Ottawa</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/map_distance_driven_zoom_2.png" height="500" width="500">
+					</section>
+
+				</section>
+
+
+				<section>
+					<h3>Vehicle characteristics</h3>
+					<img class="fragment" src="https://s3.amazonaws.com/noureddine/vehicule_type.png" height="500" width="500">
+				</section>
+
+
+				<section>
+					<section>
+						<h3>Some descriptive statistics</h3>
+						<img class="fragment" src="image/tab1.png" height="200" width="800">
+						<aside class="notes">
+							les gens qui ont eu un sinistre ont conduit 5.52% de la distance total parcourue
+						</aside>
+					</section>
+
+					<section>
+						<h3>With one or more accidents</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/sin_pg_0_2.png" height="400" width="500">
+						<aside class="notes">
+							Ici le 2972 c'est la région de Toronto et de Mississauga
+						</aside>
+					</section>
+
+					<section>
+						<h3>Two or more</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/sin_pg_1_2.png" height="350" width="500">
+					</section>
+
+					<section>
+						<h3>Three and more</h3>
+						<aside class="notes">
+							during the periode of observation, wich is the year 2016
+						</aside>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/sin_pg_2_2.png" height="350" width="500">
+					</section>
+				</section>
+
+
+
+				<section>
+					<section>
+						<h2>Claims frequency Modeling</h2>
+					</section>
+
+					<!-- <section>
+						<h3>La corrélation</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/correlation.png" height="500" width="500">
+					</section>
+					<section>
+						<h3>La corrélation</h3>
+						<img src="https://s3.amazonaws.com/noureddine/correlation_2.png" height="500" width="500">
+						<aside class="notes">
+							y'en a qui sont évident: exposition vs la distance parcourue
+							--
+							Le nombre d'années sans sinistres vs le nombre d'années permis
+							---
+							correation negative: % conduite mercredi-Jeudi -vs samedi-doimanche
+						</aside>
+					</section> -->
+
+					<section>
+						<h3>No data preprocessing</h3>
+						<ul>
+							<li class="fragment"> It handle missing data</li>
+							<li class="fragment"> One Hot Encode Categorical Data</li>
+							<br>
+							<li class="fragment">$$X_{\text{sex}}=
+    \left\{
+\begin{array}{ll}
+    0 \quad \text{ if the insured is a man,}\\
+    1 \quad \text{ if the insured is a woman.}
+\end{array}
+\right.$$</li>
+						</ul>
+					</section>
+
+					<section>
+						<h3>Data split</h3>
+						<p class="fragment">89504 observations</p>
+
+						<ul>
+							<li class="fragment">70% train (62572 observations)</li>
+							<!-- <li class="fragment">26932/89504</li> -->
+							<ul>
+								<li class="fragment">5-Fold Cross Validation</li>
+							</ul>
+							<li class="fragment">30% test (26932 observations)</li>
+							<!-- <li class="fragment">26932/89504</li> -->
+						</ul>
+					</section>
+
+					<section>
+						<h3>Tree construction (training) and prediction can be accelerated with CUDA-capable GPUs</h3>
+						<img class="fragment" src="https://s3.amazonaws.com/noureddine/convergence.png" height="400" width="550">
+					</section>
+
+				</section>
+
+
+				<section>
+
+					<h3>Variable importance</h3>
+					<section>
+						<aside class="notes">
+							we have the original data set, the for each variable
+							we randomly mix the observations, we make predictions ,
+							and se how far we are from the observed value of the response variable
+
+						</aside>
+						<!-- <h3>Variable importance</h3> -->
+
+						<img class="fragment" src="image/VI_perm_1.png" >
+					</section>
+					<section>
+						<!-- <h3>Variable importance</h3> -->
+
+						<img class="fragment" src="image/VI_perm_2.png" >
+					</section>
+					<!-- <section>
+						<img src="https://s3.amazonaws.com/noureddine/VI_perm_1.png" height="240" width="800">
+						<h4 class="fragment">On calcule l'erreur</h4>
+					</section>
+					<section>
+						<h3>2e variable</h3>
+						<img src="https://s3.amazonaws.com/noureddine/VI_perm_2.png" height="240" width="800">
+						<h4 class="fragment">On calcule l'erreur</h4>
+					</section>
+					<section>
+						<h3>Une variable "importante"</h3>
+						<p><span class="fragment">est une variable qui a produit</span> <span class="fragment">la plus grande</span>
+							<span class="fragment"><span class="fragment highlight-red">erreur.</span></span>
+							</p>
+					</section> -->
+					<section>
+						<img src="https://s3.amazonaws.com/noureddine/LGBM.png" height="500" width="500">
+						<aside class="notes">
+							On a découpé la distance parcourrue en 1000 ...
+						</aside>
+					</section>
+				</section>
+
+
+
+
+
+
+				<section>
+					<section>
+						<h3>Partial dependence plot (PDP)</h3>
+						<img src="image/PDP.png" height="500" width="600">
+					</section>
+					<section>
+						<h3>Distance driven</h3>
+						<img width="400" src="https://s3.amazonaws.com/noureddine/dep_part_km.png">
+						<img  width="400"  src="image/pdp1DistanceDriven.png" alt="">
+						<aside class="notes">
+							We connect the average of all these points
+							<br>
+							we have 6000 policyholders here who have driven 1000 km
+							<br>
+							For those, the claim frequency is 0.013
+							<br>
+							What I mean by that, is the number of policyholder oh have a tleast one claim
+						</aside>
+					</section>
+					<section>
+							<h3>Exposure (days) </h3>
+						<img  width="400" src="image/infplot2Exposure.png" >
+						<img  width="400"  src="image/pdp2Exposure.png" alt="">
+						<!-- pdp2Exposure -->
+					</section>
+					<section>
+							<h3>Vehicule age</h3>
+						<img  width="400" src="image/infplot3Vehicule_age.png">
+						<img  width="400"  src="image/pdp3Vehicule_age.png" alt="">
+						<aside class="notes">
+							so we can see that we have the same trend
+
+						</aside>
+
+					</section>
+					<section>
+							<h3>Pecent day of use</h3>
+						<img  width="400" src="image/infplot4PercentDayOfUse.png">
+						<img  width="400"  src="image/pdp4PercentDayOfUse.png" alt="">
+
+					</section>
+					<section>
+							<h3>Average number of days of use per week</h3>
+						<img  width="400" src="image/infplot5AvgDayOfUse.png" >
+						<img  width="400"  src="image/pdp5AvgDayOfUse.png" alt="">
+
+					</section>
+					<section>
+							<h3>Average hours driven</h3>
+						<img  width="400" src="image/infplot6AvgHour_driven.png">
+						<img  width="400"  src="image/pdp6AvgHour_driven.png" alt="">
+
+					</section>
+					<section>
+							<h3>Average weekly number of trips</h3>
+						<img  width="400" src="image/infplot7AvgWeeklyNbTrip.png">
+						<img  width="400"  src="image/pdp7AvgWeeklyNbTrip.png" alt="">
+
+					</section>
+						<section>
+							<h3>Be careful with PDP!</h3>
+						</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h3>let’s take a look at the test data set</h3>
+					</section>
+					<section>
+						<h3>Distance driven</h3>
+						<img width="400" src="image/fig_obs_RA_DISTANCE_DRIVEN.png">
+						<img  width="400"  src="image/fig_pred_RA_DISTANCE_DRIVEN.png" alt="">
+						<aside class="notes">
+							it's a bit less smooth, because we have less observations since it's 30% of our dataset
+
+						</aside>
+					</section>
+					<section>
+					<img src="image/distr_predRA_DISTANCE_DRIVEN.png" height="" width="">
+					<aside class="notes">
+						all our observed values were inside the interval confidance, or the 25 and the 75 quartile
+					</aside>
+					</section>
+				</section>
+
+				<section>
+					<h3>SHAP values</h3>
+					<aside class="notes">
+						Now we are a bit more confident in our model, let's take a look into SHAP values
+					</aside>
+					<section>
+					<img src="image/SHAP_km_max.png" height="" width="">
+					<aside class="notes">
+						47 k miles
+					</aside>
+					<p>47 000 miles</p>
+					</section>
+					<section>
+					<img src="image/SHAP_km_min.png" height="" width="">
+					<aside class="notes">
+						1 mile
+					</aside>
+					<p>1 mile</p>
+					</section>
+					<section>
+					<img src="image/SHAP_km_moyen.png" height="" width="">
+					<aside class="notes">
+						9 000 miles
+					</aside>
+					<p>9 000 miles</p>
+					</section>
+					<section>
+						<img src="image/interaction_princip_distance.png" height="" width="">
+						<aside class="notes">
+						</aside>
+					</section>
+
+				<section>
+					<img src="image/interaction_distance_AgeVehic.png" height="" width="">
+					<aside class="notes">
+					</aside>
+				</section>
+
+				<section>
+					<h3>Interaction effects</h3>
+					<img width="400" src="image/interaction_3d_age_km.png">
+					<img  width="400"  src="image/split_inter_age_distance.png" height="265" >
+				</section>
+
+				<section>
+					<img  width="400" src="image/shap2Exposure.png">
+					<img  width="400"  src="image/shap3Vehicule_age.png" height="307">
+				</section>
+
+				<section>
+					<img  width="400" src="image/shap4PercentDayOfUse.png">
+					<img  width="400"  src="image/shap5AvgDayOfUse.png" height="310">
+				</section>
+
+				<section>
+					<img  width="400" src="image/shap6AvgHour_driven.png">
+					<img  width="400"  src="image/shap7AvgWeeklyNbTrip.png" height="298">
+				</section>
+
+				</section>
+
+				<section>
+
+					<section>
+						<h3>Predictions</h3>
+						<img class="fragment" src="image/results1.png" >
+					</section>
+
+					<section>
+						<p >Scoring rules for count data
+							<br>
+							</body>
+							<a href="https://rss.onlinelibrary.wiley.com/doi/pdf/10.1111/rssc.12283">Verbelen, R., Antonio, K., & Claeskens, G. (2018)</a> </p>
+						<img class="fragment" src="image/results2.png" height="350" width="600">
+					</section>
+										<section>
+											<img src="image/results3.png" >
+											<aside class="notes">
+												we have obtained these results
+
+											</aside>
+										</section>
+										<section>
+											<p>$$\text{P}(Y=y | \mu ,\sigma)={\frac {\Gamma (y +\frac{1}{\sigma})}{\Gamma (y +1)\,\Gamma (\frac{1}{\sigma})}}
+					\left({\frac {\sigma \mu }{1+\sigma \mu }}\right)^{y}
+					\left({\frac {1}{1+\sigma \mu}}\right)^{\frac{1}{\sigma}}$$</p>
+										</section>
+				</section>
+
+
+
+				<!-- <section>
+				<h3>Les prédictions</h3>
+				<table class="fragment">
+					<thead>
+						<tr>
+							<th></th>
+							<th style="font-size:80%">Observés</th>
+							<th style="font-size:80%">GBMP-123</th>
+							<th style="font-size:80%">GBMP-8</th>
+
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<th style="font-size:80%" align="center">nbsin=0</th>
+							<th style="font-size:70%; color:blue" align="center">26932</th>
+							<th style="font-size:70%" align="center">26936</th>
+							<th style="font-size:70%" align="center">26935</th>
+
+						</tr>
+						<tr>
+							<th style="font-size:80%" align="center">nbsin=1</th>
+							<th style="font-size:70%; color:blue" align="center">1204</th>
+							<th style="font-size:70%" align="center">1213</th>
+							<th style="font-size:70%" align="center">1223</th>
+
+						</tr>
+						<tr>
+							<th style="font-size:80%" align="center">nbsin=2</th>
+							<th style="font-size:70%; color:blue" align="center">57</th>
+							<th style="font-size:70%" align="center">41</th>
+							<th style="font-size:70%" align="center">41</th>
+
+						</tr>
+						<tr>
+							<th style="font-size:80%" align="center">nbsin=3</th>
+							<th style="font-size:70%; color:blue" align="center">2</th>
+							<th style="font-size:70%" align="center">1</th>
+							<th style="font-size:70%" align="center">1</th>
+
+						</tr>
+					</tbody>
+				</table>
+				</section> -->
+
+				<section>
+					<h2>Thank you!</h2>
+					<a href="http://nour.me/"><i style="font-size:36px" class="fa">&#xf05a; </i></a>
+					<a href="https://www.linkedin.com/in/nmeraihi"><i style="font-size:36px" class="fa">&#xf08c; </i></a>
+					<a href="https://github.com/nmeraihi"><i style="font-size:36px" class="fa">&#xf092; </i></a>
+					<p><small><a href="noureddine.meraihi@canada.ca">noureddine.meraihi@canada.ca</a> </small></p>
+					<!-- <p class="fragment"><a href="noureddine.meraihi@canada.ca"></a>noureddine.meraihi@canada.ca</p> -->
+				</section>
+
+
+
+
+
+
+
+
+
+
+
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+
+		<script>
+
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				math: {
+				mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+				config: 'TeX-AMS_HTML-full'  // See http://docs.mathjax.org/en/latest/config-files.html
+			},
+			multiplex: {
+			  // Example values. To generate your own, see the socket.io server instructions.
+			  secret: null, // Obtained from the socket.io server. Gives this (the master) control of the presentation
+			  id: 'c764d66a380e7ba4', // Obtained from socket.io server
+			  url: 'https://reveal-js-multiplex-ccjbegmaii.now.sh' // Location of socket.io server
+			},
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/search/search.js', async: true },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/math/math.js', async: true },
+					{ src: '//cdn.socket.io/socket.io-1.3.5.js', async: true },
+					{ src: 'plugin/multiplex/client.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
